@@ -84,7 +84,7 @@ void f2p_v1(TString filename="Data_R.root")
 	//Get all the histograms and fit them
 	else{
 		TString fileoutname = filename;
-		fileoutname.ReplaceAll(".root","_analysed.txt");//the result file
+		fileoutname.ReplaceAll(".root","_analyzed.txt");//the result file
 		ofstream out(fileoutname);
 		cout.rdbuf(out.rdbuf());
 		Int_t Board_max = 9;
