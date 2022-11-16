@@ -89,9 +89,9 @@ void f2p_v2(TString filename="Data_R.root")
 		cout.rdbuf(out.rdbuf());
 		TH1D* h[140];
 		for (Int_t i=0; i<140; i++){
-			stringstream ss;
+			ostringstream ss;
 			ss << i;
-			string str == ss.str();
+			TString str == ss.str();
 			h[i] = new TH1D("h"+str, "h"+str,150,5,155);
 		}
 		Double_t par[6];
@@ -100,7 +100,7 @@ void f2p_v2(TString filename="Data_R.root")
 				tree->GetEvent(neve);
 				h[gBoard*14 + gchannel]->Fill(gEnergy);
 			}
-		for (Int_t j=0; i<140; i++){
+		for (Int_t j=0; j<140; j++){
 			h[j] -> Fit("Gaus_fitFcn", "0");
 			Gaus_fitFcn->GetParameters(&par[0]);
 			int Board_NUMBER = j/14;
