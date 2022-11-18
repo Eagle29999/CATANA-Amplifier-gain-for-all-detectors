@@ -7,6 +7,7 @@
 #include<TFile.h>
 #include<TStyle.h>
 #include<TMath.h>
+#include<math.h>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -37,26 +38,22 @@
 #include "TSystem.h"
 using namespace std;
 
-void f2p_v2(TString filename="Data_R.root")
+void f2p_v2(TString filename="DataR_catana0016.root")
 {
 	//Open the root file and set the branch
 	TFile* f = TFile::Open(filename);
 	TTree *tree = (TTree*)f->Get("Data_R");
-	Float_t gEnergy;
+	UShort_t gEnergy;
 	tree->SetBranchAddress("Energy",&gEnergy);
-	Int_t gBoard;
+	UShort_t gBoard;
 	tree->SetBranchAddress("Board",&gBoard);
-	Int_t gchannel;
-	tree->SetBranchAddress("channel",&gchannel);
+	UShort_t gchannel;
+	tree->SetBranchAddress("Channel",&gchannel);
 	
 	//Define the function
 	TH1D* h1 = new TH1D("h1", "h1",150,5,155);
-	TF1 *Gaus_fitFcn = new TF1("Gaus_fitFcn","gaus(0)+gaus(3)",20,100,6);
-	Gaus_fitFcn -> SetParameters(1,1,1,1,1,1);
-	Gaus_fitFcn -> SetParLimits(1,25,50);
-	Gaus_fitFcn -> SetParLimits(2,0,10);
-	Gaus_fitFcn -> SetParLimits(4,25,50);
-	Gaus_fitFcn -> SetParLimits(5,0,10);
+	TF1 *Gaus_fitFcn = new TF1("Gaus_fitFcn","gaus(0)+gaus(3)",1,200);
+	
 	int nevent=tree->GetEntries();
 	
 	//Check the single detector
@@ -66,47 +63,93 @@ void f2p_v2(TString filename="Data_R.root")
 	if (flag == "yes" || flag == "y" ){
 		Int_t B, C;
 		Double_t par[6];
-		cout<<"Please insert the Board and Channel number"<<endl;
-		cin >> B >> C;
-		for (Long64_t neve=0; neve<nevent; neve++){
-				tree->GetEvent(neve);
+		TSpectrum *sp;
+		sp = new TSpectrum(4);
+		Float_t *xpeaks;
+		cout<<"Please insert the Board and Channel number"<<std::endl;
+		cin >> B >> C ;
+		for (Int_t neve=0; neve<nevent; neve++){
+			if(neve%10000000==0){
+			printf("%i / %i\n",neve, nevent);
+			}	
+			tree->GetEvent(neve);
 				if (gBoard == B&&gchannel == C) h1->Fill(gEnergy);
 			}
-			h1 -> Fit("Gaus_fitFcn", "0");
+			Int_t nfound = sp->Search(h1,1,"",0.05);
+			printf("Found %i candidate peaks to fit\n",nfound);
+			xpeaks = sp->GetPositionX();
+			if (xpeaks[0]>xpeaks[1]){Float_t temp = xpeaks[0];xpeaks[0]=xpeaks[1];xpeaks[1]=temp;}
+			printf("The position is %f %f",xpeaks[0],xpeaks[1]);
+			Gaus_fitFcn -> SetParameters(1000,xpeaks[0],1,1000,xpeaks[1],1);
+			Gaus_fitFcn -> SetParLimits(0,0,2000);
+			Gaus_fitFcn -> SetParLimits(1,xpeaks[0]-5,xpeaks[0]+5);
+			Gaus_fitFcn -> SetParLimits(2,0.1,6);
+			Gaus_fitFcn -> SetParLimits(3,0,2000);
+			Gaus_fitFcn -> SetParLimits(4,xpeaks[1]-5,xpeaks[1]+5);
+			Gaus_fitFcn -> SetParLimits(5,0.1,6);
+			
+			h1 -> Fit("Gaus_fitFcn", "0","",xpeaks[0]-5,xpeaks[1]+5);
 			Gaus_fitFcn->GetParameters(&par[0]);
 			h1 -> Draw();
 			Gaus_fitFcn -> Draw("same");
-			cout << "Board number: " <<B<< " Channel number: "<<C<<endl;
+			cout << "Board number: " <<B<< " Channel number: "<<C<<std::endl;
 			cout<<"Mean1: "<<par[1]<<" Sigma1: "<<par[2]<<" Mean2: "<<par[4]
-			<<" Sigma2: "<<par[5]<<" chi-square: "<<fitFcn->GetChisquare()<<endl;
+			<<" Sigma2: "<<par[5]<<" chi-square: "<<Gaus_fitFcn->GetChisquare()<<std::endl;
 	}	
 	
 	//Get all the histograms and fit them
 	else{
+		TCanvas *c1 = new TCanvas("c1", "c1",18,41,919,777);
 		TString fileoutname = filename;
 		fileoutname.ReplaceAll(".root","_analyzed.txt");//the result file
 		ofstream out(fileoutname);
 		cout.rdbuf(out.rdbuf());
+		TSpectrum *sp;
+		sp = new TSpectrum(4);
+		Float_t *xpeaks;
 		TH1D* h[140];
 		for (Int_t i=0; i<140; i++){
 			ostringstream ss;
 			ss << i;
-			TString str == ss.str();
+			TString str = ss.str();
 			h[i] = new TH1D("h"+str, "h"+str,150,5,155);
 		}
 		Double_t par[6];
-		cout<<"Board"<<"\t"<<"Channel"<"\t"<<<"Mean1"<<"\t"<<"Sigma1"<<"\t"<<"Mean2"<<"\t"<<"Sigma2"<<"\t"<<"chi-square"<<endl;
+		cout<<"Board"<<"\t"<<"Channel"<<"\t"<<"Mean1"<<"\t"<<"Sigma1"<<"\t"<<"Mean2"<<"\t"<<"Sigma2"<<"\t"<<"chi-square"<<endl;
 		for (Long64_t neve=0; neve<nevent; neve++){
 				tree->GetEvent(neve);
-				h[gBoard*14 + gchannel]->Fill(gEnergy);
+				if(neve%10000000==0){
+				printf("%i / %i\n",neve, nevent);
+				}	
+				if(gchannel<14){
+				h[gBoard*14 + gchannel]->Fill(gEnergy);}
 			}
 		for (Int_t j=0; j<140; j++){
-			h[j] -> Fit("Gaus_fitFcn", "0");
+			Int_t nfound = sp->Search(h[j],1,"",0.05);
+			printf("Found %i candidate peaks to fit\n",nfound);
+			xpeaks = sp->GetPositionX();
+			if (xpeaks[0]>xpeaks[1]){Float_t temp = xpeaks[0];xpeaks[0]=xpeaks[1];xpeaks[1]=temp;}
+			printf("The position is %f %f",xpeaks[0],xpeaks[1]);
+			Gaus_fitFcn -> SetParameters(1000,xpeaks[0],1,1000,xpeaks[1],1);
+			Gaus_fitFcn -> SetParLimits(0,0,2000);
+			Gaus_fitFcn -> SetParLimits(1,xpeaks[0]-3,xpeaks[0]+3);
+			Gaus_fitFcn -> SetParLimits(2,0,20);
+			Gaus_fitFcn -> SetParLimits(3,0,2000);
+			Gaus_fitFcn -> SetParLimits(4,xpeaks[1]-3,xpeaks[1]+3);
+			Gaus_fitFcn -> SetParLimits(5,0,20);
+			
+			h[j] -> Fit("Gaus_fitFcn", "0","",xpeaks[0]-5,xpeaks[1]+5);
 			Gaus_fitFcn->GetParameters(&par[0]);
 			int Board_NUMBER = j/14;
-			int Channel_NUMBER = j%10;
+			int Channel_NUMBER = j%14;
+			h[j]->Draw();
+			Gaus_fitFcn->Draw("same");
+			ostringstream ss2;
+			ss2 << j;
+			TString str2 = ss2.str();
+			c1->Print("Figure/h"+str2+".jpg","jpg");
 			cout<<Board_NUMBER<<"\t"<<Channel_NUMBER<<"\t"<<par[1]<<"\t"<<par[2]<<"\t"<<par[4]<<"\t"<<
-			par[5]<<"\t"<<fitFcn->GetChisquare()<<endl;
+			par[5]<<"\t"<<Gaus_fitFcn->GetChisquare()<<std::endl;
 		}	
 	}
 	
