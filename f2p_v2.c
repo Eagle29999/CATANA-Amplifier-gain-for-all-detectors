@@ -51,7 +51,7 @@ void f2p_v2(TString filename="DataR_catana0016.root")
 	tree->SetBranchAddress("Channel",&gchannel);
 	
 	//Define the function
-	TH1D* h1 = new TH1D("h1", "h1",150,5,155);
+	TH1D* h1 = new TH1D("h1", "h1",245,5,250);
 	TF1 *Gaus_fitFcn = new TF1("Gaus_fitFcn","gaus(0)+gaus(3)",1,200);
 	
 	int nevent=tree->GetEntries();
@@ -78,17 +78,25 @@ void f2p_v2(TString filename="DataR_catana0016.root")
 			Int_t nfound = sp->Search(h1,1,"",0.05);
 			printf("Found %i candidate peaks to fit\n",nfound);
 			xpeaks = sp->GetPositionX();
-			if (xpeaks[0]>xpeaks[1]){Float_t temp = xpeaks[0];xpeaks[0]=xpeaks[1];xpeaks[1]=temp;}
-			printf("The position is %f %f",xpeaks[0],xpeaks[1]);
-			Gaus_fitFcn -> SetParameters(1000,xpeaks[0],1,1000,xpeaks[1],1);
+			for(int i2=0;i2<nfound-1;i2++){
+				for(int j2=0;j2<nfound-1-i2;j2++){
+					if(xpeaks[j2]>xpeaks[j2+1]){
+						Float_t temp = xpeaks[j2];
+						xpeaks[j2] = xpeaks[j2+1];
+						xpeaks[j2+1] = temp;
+					}
+				}
+			}
+			printf("The position is %f %f",xpeaks[nfound-2],xpeaks[nfound-1]);
+			Gaus_fitFcn -> SetParameters(1000,xpeaks[nfound-2],1,1000,xpeaks[nfound-1],1);
 			Gaus_fitFcn -> SetParLimits(0,0,2000);
-			Gaus_fitFcn -> SetParLimits(1,xpeaks[0]-5,xpeaks[0]+5);
-			Gaus_fitFcn -> SetParLimits(2,0.1,6);
+			Gaus_fitFcn -> SetParLimits(1,xpeaks[nfound-2]-3,xpeaks[nfound-2]+3);
+			Gaus_fitFcn -> SetParLimits(2,0,20);
 			Gaus_fitFcn -> SetParLimits(3,0,2000);
-			Gaus_fitFcn -> SetParLimits(4,xpeaks[1]-5,xpeaks[1]+5);
-			Gaus_fitFcn -> SetParLimits(5,0.1,6);
+			Gaus_fitFcn -> SetParLimits(4,xpeaks[nfound-1]-3,xpeaks[nfound-1]+3);
+			Gaus_fitFcn -> SetParLimits(5,0,20);
 			
-			h1 -> Fit("Gaus_fitFcn", "0","",xpeaks[0]-5,xpeaks[1]+5);
+			h1 -> Fit("Gaus_fitFcn", "0","",xpeaks[nfound-2]-5,xpeaks[nfound-1]+5);
 			Gaus_fitFcn->GetParameters(&par[0]);
 			h1 -> Draw();
 			Gaus_fitFcn -> Draw("same");
@@ -109,10 +117,16 @@ void f2p_v2(TString filename="DataR_catana0016.root")
 		Float_t *xpeaks;
 		TH1D* h[140];
 		for (Int_t i=0; i<140; i++){
-			ostringstream ss;
+			ostringstream ss,ss2,ss3;
+			int Board_NUMBER2 = i/14;
+			int Channel_NUMBER2 = i%14;
 			ss << i;
+			ss2 << Board_NUMBER2;
+			ss3 << Channel_NUMBER2;
 			TString str = ss.str();
-			h[i] = new TH1D("h"+str, "h"+str,150,5,155);
+			TString str3 = ss2.str();
+			TString str4 = ss3.str();
+			h[i] = new TH1D("h"+str, "Board "+str3+" Channel: "+str4,245,5,250);
 		}
 		Double_t par[6];
 		cout<<"Board"<<"\t"<<"Channel"<<"\t"<<"Mean1"<<"\t"<<"Sigma1"<<"\t"<<"Mean2"<<"\t"<<"Sigma2"<<"\t"<<"chi-square"<<endl;
@@ -128,17 +142,25 @@ void f2p_v2(TString filename="DataR_catana0016.root")
 			Int_t nfound = sp->Search(h[j],1,"",0.05);
 			printf("Found %i candidate peaks to fit\n",nfound);
 			xpeaks = sp->GetPositionX();
-			if (xpeaks[0]>xpeaks[1]){Float_t temp = xpeaks[0];xpeaks[0]=xpeaks[1];xpeaks[1]=temp;}
-			printf("The position is %f %f",xpeaks[0],xpeaks[1]);
-			Gaus_fitFcn -> SetParameters(1000,xpeaks[0],1,1000,xpeaks[1],1);
+			for(int i2=0;i2<nfound-1;i2++){
+				for(int j2=0;j2<nfound-1-i2;j2++){
+					if(xpeaks[j2]>xpeaks[j2+1]){
+						Float_t temp = xpeaks[j2];
+						xpeaks[j2] = xpeaks[j2+1];
+						xpeaks[j2+1] = temp;
+					}
+				}
+			}
+			printf("The position is %f %f",xpeaks[nfound-2],xpeaks[nfound-1]);
+			Gaus_fitFcn -> SetParameters(1000,xpeaks[nfound-2],1,1000,xpeaks[nfound-1],1);
 			Gaus_fitFcn -> SetParLimits(0,0,2000);
-			Gaus_fitFcn -> SetParLimits(1,xpeaks[0]-3,xpeaks[0]+3);
+			Gaus_fitFcn -> SetParLimits(1,xpeaks[nfound-2]-3,xpeaks[nfound-2]+3);
 			Gaus_fitFcn -> SetParLimits(2,0,20);
 			Gaus_fitFcn -> SetParLimits(3,0,2000);
-			Gaus_fitFcn -> SetParLimits(4,xpeaks[1]-3,xpeaks[1]+3);
+			Gaus_fitFcn -> SetParLimits(4,xpeaks[nfound-1]-3,xpeaks[nfound-1]+3);
 			Gaus_fitFcn -> SetParLimits(5,0,20);
 			
-			h[j] -> Fit("Gaus_fitFcn", "0","",xpeaks[0]-5,xpeaks[1]+5);
+			h[j] -> Fit("Gaus_fitFcn", "0","",xpeaks[nfound-2]-5,xpeaks[nfound-1]+5);
 			Gaus_fitFcn->GetParameters(&par[0]);
 			int Board_NUMBER = j/14;
 			int Channel_NUMBER = j%14;
