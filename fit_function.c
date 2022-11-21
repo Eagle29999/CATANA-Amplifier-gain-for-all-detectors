@@ -43,7 +43,7 @@ void fit_function() {
 	Double_t V;
 	TF1 *fitFcn = new TF1("fitFcn",fitFunction,1400,1550,2);
 	fitFcn -> SetParameters(9.54591e-21,6.85252);
-	//fitFcn -> SetParLimits(0,0,0.01);
+	//fitFcn -> SetParLimits(0,1e-24,1e-18);
 	//fitFcn -> SetParLimits(1,0,10);
 	std::cout<<"Board"<<"\t"<<"Channel"<<"\t"<<"A:"<<"\t"<<"n:"<<"\t"<<"chi-square"<<"\t"<<"Voltage"<<std::endl;
 	
@@ -70,7 +70,7 @@ void fit_function() {
 		TString str2 = ss2.str();
 		c1->Print("Figure/h"+str2+"_fit.jpg","jpg");
 		fitFcn->GetParameters(&par[0]);
-		V = TMath::Power(((4000*1.173/300)/par[0]),1/par[1]);
+		V = TMath::Power(((4000*1.33/300)/par[0]),1/par[1]);
 		std::cout<< Board[0] << "\t" << Channel[0] <<"\t"<<par[0]<<"\t"<<par[1]<<"\t"<<
 		fitFcn->GetChisquare()<<"\t"<<V<<std::endl;
 	}
