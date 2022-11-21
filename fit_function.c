@@ -31,10 +31,10 @@ void fit_function() {
 	FILE*fp_1460 = fopen ("DataR_catana0015_analyzed.txt","r");
 	FILE*fp_1480 = fopen ("DataR_catana0014_analyzed.txt","r");
 	FILE*fp_1500 = fopen ("DataR_catana0013_analyzed.txt","r");
-	//FILE*fp_1520 = fopen ("DataR_catana0017_analyzed.txt","r");
 	ofstream out("result.txt");
 	cout.rdbuf(out.rdbuf());
-	static const Int_t n = 140;
+	//FILE*fp_1520 = fopen ("DataR_catana0017_analyzed.txt","r");
+	Int_t n = 140;
 	Float_t x[4] = {1440, 1460, 1480, 1500};
 	Int_t Channel[4];
 	Int_t Board[4];
@@ -42,8 +42,11 @@ void fit_function() {
 	Double_t par[4];
 	Double_t V;
 	TF1 *fitFcn = new TF1("fitFcn",fitFunction,1400,1550,2);
-	fitFcn -> SetParameters(1,1);
+	fitFcn -> SetParameters(9.54591e-21,6.85252);
+	//fitFcn -> SetParLimits(0,0,0.01);
+	//fitFcn -> SetParLimits(1,0,10);
 	std::cout<<"Board"<<"\t"<<"Channel"<<"\t"<<"A:"<<"\t"<<"n:"<<"\t"<<"chi-square"<<"\t"<<"Voltage"<<std::endl;
+	
 	for(int i=0;i<n;i++)
 	{	
 		fscanf(fp_1440,"%i %i %f",&Board[0],&Channel[0],&y[0]);
@@ -53,7 +56,13 @@ void fit_function() {
 		//fscanf(fp_1520,"%i %i %f",&Board[4],&Channel[4],&y[4]);
 		//cout << Board[0] << "\t" << Channel[0] <<"\t"<<y[0]<<endl;
 		TGraph *gr1 = new TGraph (4, x, y);
-		gr1->Fit("fitFcn");
+		ostringstream ss0,ss1;
+		ss0 << Board[0];
+		ss1 << Channel[0];
+		TString str0 = ss0.str();
+		TString str1 = ss1.str();
+		gr1->SetTitle("Board: "+str0+" Channel: "+str1);
+		gr1->Fit("fitFcn","Q");
 		gr1->Draw("AC*");
 		fitFcn->Draw("same");
 		ostringstream ss2;
